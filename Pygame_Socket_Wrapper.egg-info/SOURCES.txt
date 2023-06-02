@@ -1,0 +1,9 @@
+LICENSE
+README.md
+pyproject.toml
+setup.cfg
+Pygame_Socket_Wrapper.egg-info/PKG-INFO
+Pygame_Socket_Wrapper.egg-info/SOURCES.txt
+Pygame_Socket_Wrapper.egg-info/dependency_links.txt
+Pygame_Socket_Wrapper.egg-info/top_level.txt
+src/__init__.py

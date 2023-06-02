@@ -1,0 +1,21 @@
+Metadata-Version: 2.1
+Name: Pygame-Socket-Wrapper
+Version: 1.0.0
+Summary: Socket Wrapper for easily creating multiplayer games.
+Home-page: https://github.com/NotMEE12/Pygame-Socket-Wrapper
+Author: NotMEE12
+Author-email: legominefan@gmail.com
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+License-File: LICENSE
+
+# Pygame-Socket-Wrapper
+Socket wrapper for sending and receiving packets
+
+### it adds `SocketWrapper` and `Packet` classes.
+`SocketWrapper` is for client/server code, while `Packet` is used to pass data to `SocketWrapper`.
+
+More documentation is in code.
