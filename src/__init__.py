@@ -37,6 +37,7 @@ class SocketWrapper:
 		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		self.is_client = False
 		self.hosting = False
+		self.cache = ""
 		self.clients = []
 		self.ids = []
 	
@@ -62,7 +63,8 @@ class SocketWrapper:
 	
 	@staticmethod
 	def send_to(conn, packet):
-		"""this function is raw, so it doesn't handle when someone exits (it will still send data and it can raise an error), so BE CAREFUL"""
+		"""this function is raw, so it doesn't handle when someone exits (it will still send data and it can raise an
+		error), so BE CAREFUL"""
 		conn.send(bytes(packet))
 	
 	def host(self, port):
@@ -71,12 +73,17 @@ class SocketWrapper:
 		:param port: it will host at that port
 		:return: (True, hostname) or Error
 		"""
-		self.sock.bind((socket.gethostbyname(socket.gethostname()), port))
-		self.sock.listen(15)
-		print("Server listening on 0.0.0.0; 40_000")
-		print("Server Host Name: ", socket.gethostname())
-		self.hosting = True
-		return True, socket.gethostname()
+		try:
+			self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			self.sock.bind((socket.gethostbyname(socket.gethostname()), port))
+			self.sock.listen(15)
+			print("Server listening on 0.0.0.0; 40_000")
+			print("Server Host Name: ", socket.gethostname())
+			self.hosting = True
+			return True, socket.gethostname()
+		except OSError:
+			self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+			return False
 	
 	def listen(self):
 		"""
@@ -99,7 +106,7 @@ class SocketWrapper:
 		"""
 		socket.setdefaulttimeout(5)
 		try:
-			e = socket.getaddrinfo(hostname, 40_000, 5)
+			e = socket.gethostbyname(hostname)
 		except (socket.gaierror, OSError, TimeoutError) as err:
 			self.is_client = False
 			return False
@@ -107,23 +114,34 @@ class SocketWrapper:
 			self.sock.connect((e, 40_000))
 			self.is_client = True
 		except (ConnectionRefusedError, socket.gaierror) as err:
+			print(1, err, hostname)
+			self.sock.close()
+			self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 			self.is_client = False
 			return False
 		return True
 	
-	@staticmethod
-	def receive_data(conn):
+	def receive_data(self, conn):
 		"""
 		receives data from connection (give it)
 		:yield: PacketType, Json
 		"""
-		for line in conn.recv(16737).decode("utf-8").replace('\'', '\"').replace('(', '[').replace(')', ']') \
-				            .split("\n")[:-1]:
+		for line in conn.recv(16737).decode("utf-8").split("\n")[:-1]:
 			try:
 				json_data = json.loads(line)
-				yield json_data['PT'], json_data
+				yield json_data['PT'], json_data['DATA']
+			except json.JSONDecodeError:
+				self.cache += line + "\n"
+		
+		idx = 0
+		for line in self.cache.split('\n'):
+			try:
+				json_data = json.loads(line)
+				yield json_data['PT'], json_data['DATA']
+				idx += len(line)
 			except json.JSONDecodeError:
 				pass
+		self.cache = self.cache[idx:]
 
 
 class Packet:
@@ -136,5 +154,5 @@ class Packet:
 		self.dat = data
 	
 	def __bytes__(self):
-		self.dat['PT'] = self.type  # SET PACKET TYPE
-		return bytes(json.dumps(self.dat).encode("utf-8") + "\n".encode("utf-8"))
+		data = {'PT': self.type, 'DATA': self.dat}
+		return bytes(json.dumps(data).encode("utf-8") + "\n".encode("utf-8"))
